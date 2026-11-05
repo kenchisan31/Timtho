@@ -109,3 +109,12 @@ h1{font-size:24px}h2{font-size:20px}
 .cm .bb{font-size:16px}
 [style*="font-size:12px"],[style*="font-size:13px"]{font-size:15px!important}
 }
+/* ---------- BỘ LỌC GỌN: GÕ ĐỂ TÌM, DANH SÁCH THẢ XUỐNG NHỎ ---------- */
+.flt{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:12px 0}.flt .q{grid-column:1/-1;width:100%}.flt>select{width:100%}
+.bar .cb{flex:1 1 180px}
+.cb{position:relative}.cb input{width:100%;padding-right:34px}
+.cbx{position:absolute;right:6px;top:50%;transform:translateY(-50%);cursor:pointer;color:var(--mu);padding:6px 8px;font-size:15px}
+.cbl{position:absolute;left:0;right:0;top:calc(100% + 4px);background:var(--card);border:1px solid var(--bd);border-radius:10px;box-shadow:0 8px 24px #0005;max-height:240px;overflow-y:auto;z-index:15;-webkit-overflow-scrolling:touch}
+.cbi{padding:11px 12px;cursor:pointer;border-bottom:1px solid var(--bd)}.cbi:last-child{border-bottom:0}.cbi:hover{background:var(--bg)}.cbi.on{font-weight:700;color:var(--ac)}
+.cbi small{display:block;color:var(--mu);font-weight:400;font-size:13px}
+@media(max-width:600px){.flt{grid-template-columns:1fr 1fr}.flt .sk{grid-column:1/-1}.cbi small{font-size:14px}}
