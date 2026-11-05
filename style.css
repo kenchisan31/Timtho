@@ -94,3 +94,18 @@ input,select,textarea{font-size:16px}
 /* ---------- Ô GIÁ GỌN + THỎA THUẬN ---------- */
 .rr{display:flex;align-items:center;gap:12px;flex-wrap:wrap}.rr .mi{flex:1 1 150px;max-width:210px}
 .ck{display:flex;align-items:center;gap:8px;white-space:nowrap;cursor:pointer;font-size:15px}.ck input{width:22px;height:22px;padding:0;accent-color:var(--ac);cursor:pointer}
+/* ---------- ẢNH THẺ NHỎ LẠI 15% + CHỮ TO HƠN TRÊN ĐIỆN THOẠI ---------- */
+.cph{width:85%;margin:0 auto}
+@media(max-width:600px){
+body{font-size:17px;line-height:1.55}
+.nav a.t{font-size:17px}.logo{font-size:21px}
+h1{font-size:24px}h2{font-size:20px}
+.grid .card.h b{font-size:1.1em}
+.tag{font-size:14px;padding:3px 11px}
+.st{font-size:19px}
+.fl>span,.ck{font-size:15px}
+.chip,.pn,.am-c,.cm .bb.of,.err{font-size:15px}
+.am-c{font-size:16px}.cm .bb.of{font-size:16px}
+.cm .bb{font-size:16px}
+[style*="font-size:12px"],[style*="font-size:13px"]{font-size:15px!important}
+}
