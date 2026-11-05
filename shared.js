@@ -160,3 +160,20 @@ function albumDel(id){if(!confirm("Xoá thư mục công trình này và toàn b
 
 /* ---------- HIỂN THỊ GIÁ: giá báo sẵn + lương thỏa thuận ---------- */
 const rateTxt=w=>(w.rate?esc(w.rate):"")+(w.negot?(w.rate?' <span class="tag" style="border-color:var(--ac);color:var(--ac)">🤝 Thỏa thuận</span>':"Lương thỏa thuận"):"");
+
+/* ---------- TÌM KIẾM KHÔNG PHÂN BIỆT HOA/THƯỜNG, KHÔNG CẦN DẤU + Ô CHỌN GÕ ĐỂ LỌC ---------- */
+const norm=s=>String(s||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/đ/g,"d").replace(/\s+/g," ").trim();
+const kwMatch=(text,q)=>{const t=norm(text);return norm(q).split(" ").filter(Boolean).every(k=>t.includes(k))};
+const provAlias=n=>{const o=(PROV.find(p=>p[0]===n)||[])[1];return o?"gồm "+o.split("|").join(", "):""};
+function comboInit(id,items,val,ph,onpick,alias){const box=document.querySelector("#"+id);if(!box)return;alias=alias||(()=>"");
+box.innerHTML=`<input type="text" autocomplete="off" placeholder="${esc(ph)}" value="${esc(val||"")}"><span class="cbx"${val?"":" hidden"}>✕</span><div class="cbl" hidden></div>`;
+const inp=box.querySelector("input"),lst=box.querySelector(".cbl"),x=box.querySelector(".cbx");let cur=val||"";
+const match=q=>items.filter(s=>kwMatch(s+" "+alias(s),q));
+const show=()=>{const q=inp.value===cur?"":inp.value,m=match(q);lst.innerHTML=m.map(s=>`<div class="cbi${s===cur?" on":""}" data-v="${esc(s)}">${esc(s)}${alias(s)?`<small>${esc(alias(s))}</small>`:""}</div>`).join("")||'<div class="cbi" style="color:var(--mu)">Không có kết quả</div>';lst.hidden=false};
+const pick=v=>{cur=v;inp.value=v;lst.hidden=true;x.hidden=!v;onpick(v)};
+inp.onfocus=()=>{inp.select();show()};inp.oninput=()=>{show();x.hidden=!inp.value};
+lst.onmousedown=e=>e.preventDefault();
+lst.onclick=e=>{const it=e.target.closest(".cbi");if(it&&it.dataset.v!==undefined)pick(it.dataset.v)};
+x.onmousedown=e=>e.preventDefault();x.onclick=()=>pick("");
+inp.onblur=()=>{lst.hidden=true;const t=inp.value.trim();if(!t){if(cur)pick("");return}if(t===cur)return;const m=match(t),ex=items.find(s=>norm(s)===norm(t))||(m.length===1?m[0]:null);if(ex)pick(ex);else inp.value=cur};
+inp.onkeydown=e=>{if(e.key==="Enter"){e.preventDefault();const f=lst.querySelector(".cbi[data-v]");if(f)pick(f.dataset.v);inp.blur()}if(e.key==="Escape")inp.blur()}}
