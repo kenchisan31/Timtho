@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>ThợViệt – Đăng nhập</title><link rel="stylesheet" href="style.css"></head><body>
+<header><div class="in nav" id="nav"></div></header><main class="in" id="app"></main>
+<script src="shared.js"></script>
+<script>
+if(S&&DEST[S.role])location.replace(DEST[S.role]);
+let mode="login",role="tho";
+
+async function hash(s){try{const b=await crypto.subtle.digest("SHA-256",new TextEncoder().encode("tv:"+s));return[...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,"0")).join("")}catch(e){return btoa(unescape(encodeURIComponent("tv:"+s)))}}
+function vAuth(){$("#app").innerHTML=`<div class="au"><div style="text-align:center;font-size:28px;font-weight:800;color:var(--ac)">🔧 ThợViệt</div><p class="mu" style="text-align:center;margin-top:0">Kết nối thợ cơ khí, thợ điện, kỹ sư công trình với doanh nghiệp</p><div class="card"><div class="tabs"><button id="t1" class="${mode==="login"?"on":""}">Đăng nhập</button><button id="t2" class="${mode==="reg"?"on":""}">Đăng ký</button></div><div class="f">${mode==="reg"?`<input id="nm" placeholder="Họ tên / Tên doanh nghiệp"><div class="roles"><div id="r1" class="on">🔧 Tôi là thợ<br><small class="mu">Tìm việc, nhận dự án</small></div><div id="r2">🏢 Tôi cần thuê thợ<br><small class="mu">Đăng dự án, chọn thợ</small></div></div>`:""}<input id="em" type="email" placeholder="Email"><input id="pw" type="password" placeholder="Mật khẩu (từ 6 ký tự)"><button class="btn" id="go">${mode==="reg"?"Tạo tài khoản":"Đăng nhập"}</button></div><div class="err" id="er"></div></div><p class="mu" style="text-align:center;font-size:13px">Bản demo: dữ liệu lưu trong trình duyệt này.</p></div>`;
+$("#t1").onclick=()=>{mode="login";vAuth()};$("#t2").onclick=()=>{mode="reg";vAuth()};role="tho";
+if(mode==="reg")[["r1","tho"],["r2","biz"]].forEach(([id,r])=>$("#"+id).onclick=()=>{role=r;$("#r1").classList.toggle("on",r==="tho");$("#r2").classList.toggle("on",r==="biz")});
+const go=async()=>{const em=$("#em").value.trim().toLowerCase(),pw=$("#pw").value,U=load("tv_users")||[],err=m=>$("#er").textContent=m;
+if(!em.includes("@")||pw.length<6)return err("Nhập email hợp lệ và mật khẩu từ 6 ký tự.");const h=await hash(pw);let u;
+if(mode==="reg"){const nm=$("#nm").value.trim();if(!nm)return err("Vui lòng nhập tên.");if(U.some(x=>x.email===em))return err("Email này đã được đăng ký.");u={email:em,name:nm,role,pw:h};U.push(u);put("tv_users",U)}
+else{u=U.find(x=>x.email===em&&x.pw===h);if(!u)return err("Sai email hoặc mật khẩu.")}
+S={email:u.email,name:u.name,role:u.role};sput("tv_session",S);location.href=DEST[S.role]};
+$("#go").onclick=go;$("#pw").onkeydown=e=>{if(e.key==="Enter")go()}}
+
+
+$("#nav").innerHTML='<span class="logo">🔧 ThợViệt</span>';vAuth();
+</script></body></html>

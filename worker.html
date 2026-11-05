@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>ThợViệt – Dành cho thợ</title><link rel="stylesheet" href="style.css"></head><body>
+<header><div class="in nav" id="nav"></div></header><main class="in" id="app"></main>
+<script src="shared.js"></script>
+<script>
+let fc="",fp="",edit=false;
+
+function vViec(){const me=myShop();if(fc===""&&me&&!vViec.i){fc=me.cat;fp=normCity(me.city);vViec.i=1}
+$("#app").innerHTML=`<h1>Việc đang tuyển</h1><div class="mu">Báo giá theo công để nhận việc.${me?"":" <b>Hãy tạo gian hàng trước khi báo giá.</b>"}</div><div class="bar"><select id="c">${catOpts(1)}</select><select id="p">${provSel()}</select></div><div class="grid">${DB.jobs.filter(j=>(!fc||j.cat===fc)&&(!fp||normCity(j.city)===fp)).map(j=>{const b=me&&j.bids.find(x=>x.w===me.id);return`<div class="card"><span class="tag">${ICON[j.cat]} ${j.cat}</span><h3 style="margin:6px 0">${esc(j.title)}</h3><div class="mu">📍 ${esc(normCity(j.city))} · ${esc(j.byName)}</div><div style="margin:4px 0"><b>${esc(j.budget)}</b>${j.days?" · "+esc(j.days):""}</div><p>${esc(j.desc)}</p>${b?`<span class="tag">✅ Đã báo giá ${esc(b.p)}</span>`:j.chosen?'<span class="tag">Đã tuyển xong</span>':`<button class="btn" onclick="bidf(${j.id})">Báo giá</button><div id="b${j.id}"></div>`}${j.by&&me?`<div style="margin-top:6px"><button class="btn g" onclick="chatOwner(${j.id})">💬 Nhắn chủ dự án</button></div>`:""}</div>`}).join("")||'<p class="mu">Chưa có việc phù hợp.</p>'}</div>`;
+$("#c").value=fc;$("#p").value=fp;$("#c").onchange=e=>{fc=e.target.value;vViec()};$("#p").onchange=e=>{fp=e.target.value;vViec()}}
+function bidf(id){if(!myShop()){alert("Hãy tạo gian hàng trước để chủ dự án xem năng lực của bạn.");location.hash="gianhang";return}
+$("#b"+id).innerHTML=`<div class="f">${moneyInp("bp","","Giá đề xuất, VD: 550.000")}<textarea id="bm" placeholder="Lời nhắn cho chủ dự án"></textarea><button class="btn" id="bs">Gửi báo giá</button></div>`;
+$("#bs").onclick=()=>{const p=moneyVal("bp");if(!p)return;DB.jobs.find(j=>j.id===id).bids.push({w:myShop().id,p,m:$("#bm").value.trim()});save();vViec()}}
+function vBids(){const me=myShop(),l=me?DB.jobs.filter(j=>j.bids.some(b=>b.w===me.id)):[];$("#app").innerHTML=`<h1>Báo giá của tôi</h1>${l.map(j=>{const b=j.bids.find(x=>x.w===me.id);return`<div class="card bd" style="margin-top:10px"><div><b>${esc(j.title)}</b><div class="mu">${esc(j.byName)} · giá chủ đưa ${esc(j.budget)}</div></div><div><b>${esc(b.p)}</b><div class="mu">${j.chosen===me.id?"🎉 Bạn đã được chọn":j.chosen?"Chủ đã chọn thợ khác":"Đang chờ phản hồi"}</div>${j.chosen===me.id?(hasWork(me.id,j.id)?'<span class="tag">🟠 Đang nhận việc</span>':`<button class="btn" onclick="acceptJob(${j.id})">Nhận việc</button>`):""}</div></div>`}).join("")||'<p class="mu">Bạn chưa báo giá dự án nào.</p>'}`}
+function statusCard(me){const a=me.active||[];
+if(!a.length&&!me.busy)return`<div class="card" style="margin-bottom:12px"><div class="bd"><div><b style="color:#2a9d4a">🟢 Đang rảnh</b><div class="mu">Chủ dự án thấy bạn đang sẵn sàng nhận việc.</div></div><button class="btn" onclick="setBusy(true)">🟠 Chuyển sang Đang nhận việc</button></div></div>`;
+return`<div class="card" style="margin-bottom:12px;border-color:var(--ac)"><div class="bd"><div><b style="color:var(--ac)">🟠 Đang nhận việc${a.length?` (${a.length})`:""}</b>${a.length?"":'<div class="mu">Bạn tự chuyển sang trạng thái này, chủ dự án sẽ thấy bạn đang bận.</div>'}</div>${a.length?"":'<button class="btn" onclick="setBusy(false)">🟢 Chuyển lại Đang rảnh</button>'}</div>${a.map((x,i)=>`<div class="rv bd"><div><b>${esc(x.job)}</b><div class="mu">Khách: ${esc(x.client)} · ${esc(x.price||"")}</div></div><span><button class="btn g" onclick="endJob(${i},'done')">✅ Hoàn thành</button> <button class="btn g" onclick="endJob(${i},'cancel')">Không làm được → Đang rảnh</button></span></div>`).join("")}</div>`}
+function setBusy(b){DB=load("tv_db")||DB;const me=myShop();me.busy=b;save();vShop()}
+function endJob(i,how){if(!confirm(how==="done"?"Hoàn thành công việc này và chuyển sang Đang rảnh?":"Xác nhận không làm được việc này? Trạng thái sẽ chuyển lại thành Đang rảnh và chủ dự án sẽ được báo."))return;
+DB=load("tv_db")||DB;const me=myShop(),a=me.active.splice(i,1)[0];if(!me.active.length)me.busy=false;
+if(how==="cancel"){const cv=(DB.convs||[]).find(z=>z.id===a.cid);if(cv)cv.msgs.forEach(m=>{if(m.offer&&m.offer.job===a.job&&m.offer.st==="ok")m.offer.st="cancel"})}
+if(a.jobId){const j=DB.jobs.find(x=>x.id===a.jobId);if(j&&j.chosen===me.id){if(how==="done")j.done=true;else j.chosen=0}}save();
+pushMsg(a.cid,{f:"w",t:how==="done"?`✅ Mình đã hoàn thành "${a.job}".`:`⚠️ Xin lỗi, mình không thể làm "${a.job}" được nữa. Mình đã chuyển về trạng thái đang rảnh.`});vShop()}
+function vShop(){const me=myShop();if(!me||edit)return vForm(me);migrateGallery(me);
+$("#app").innerHTML=`<h1 style="max-width:680px;margin:8px auto">Gian hàng của tôi</h1><div style="max-width:680px;margin:0 auto 12px">${statusCard(me)}</div>${cvPage(me,{own:1,act:'<button class="btn g" id="ed">Sửa thông tin</button>'})}`;
+$("#ed").onclick=()=>{edit=true;vShop()}}
+function vForm(me){const m=me||{name:S.name,cat:CATS[0],city:"",rate:"",exp:"",bio:"",skills:[]};let cat=m.cat,sel=new Set(m.skills.filter(s=>SKILLS[m.cat].includes(s))),photo=m.photo||"";const D2={};SEC.forEach(s=>D2[s.k]=JSON.parse(JSON.stringify(m[s.k]||[])));
+const ents=k=>{const s=SEC.find(x=>x.k===k);return D2[k].map((it,i)=>`<div class="ent gr"><button class="x" data-del="${k}:${i}" title="Xoá">✕</button>${s.f.map(([f,l,t])=>`<label class="fl ${t==="h"?"h":""}"><span>${l}</span>${t==="a"?`<textarea data-k="${k}" data-i="${i}" data-f="${f}">${esc(it[f]||"")}</textarea>`:`<input data-k="${k}" data-i="${i}" data-f="${f}" value="${esc(it[f]||"")}">`}</label>`).join("")}</div>`).join("")};
+const pho=()=>photo?`<img src="${photo}" alt="">`:ini(m.name);
+$("#app").innerHTML=`<h1>${me?"Thông tin của tôi":"Tạo gian hàng của bạn"}</h1><div class="cv"><div class="cvh"><label class="avu" title="Đổi ảnh đại diện"><span id="pvw" style="display:contents">${pho()}</span><input type="file" accept="image/*" id="ph" hidden></label><div style="flex:1;display:grid;gap:8px"><div style="font-size:13px">Ảnh chân dung: nên chụp rõ mặt, nền sáng</div><input id="a1" placeholder="Họ và tên" value="${esc(m.name)}"><select id="a2">${catOpts()}</select></div></div>
+<div class="cvb"><div class="cvs"><h3>Thông tin cơ bản</h3><div class="gr">${fh("Tỉnh/thành phố làm việc",cityInp("a3",m.city))}<div class="fl"><span>Giá nhận việc</span><div class="rr">${moneyInp("a4",m.rate)}<label class="ck"><input type="checkbox" id="neg" ${m.negot?"checked":""}> Thỏa thuận</label></div></div>${fh("Số năm kinh nghiệm",`<input id="a5" type="number" min="0" value="${m.exp}">`)}${fh("Giới tính",`<select id="gd"><option value="">—</option><option>Nam</option><option>Nữ</option><option>Khác</option></select>`)}${fh("Năm sinh",`<input id="by" type="number" min="1940" max="2010" placeholder="VD: 1990" value="${m.byear||""}">`)}${fh("Số điện thoại",`<input id="tel" type="tel" value="${esc(m.phone||"")}">`)}${fld("Email",`<input id="mail" type="email" value="${esc(m.email||"")}">`)}<label class="mu" style="grid-column:1/-1"><input type="checkbox" id="pub" ${m.pub?"checked":""}> Cho chủ dự án xem số điện thoại & email trên hồ sơ (nếu không chọn, họ liên hệ qua tin nhắn)</label></div></div>
+<div class="cvs"><h3>Kỹ năng</h3><div class="chips" id="sk"></div><div style="margin-top:10px">${fld("Kỹ năng khác chưa có trong danh sách (cách nhau dấu phẩy)",`<input id="a6" placeholder="VD: Hàn nhôm kính" value="${esc(m.skills.filter(s=>!SKILLS[m.cat].includes(s)).join(", "))}">`)}</div></div>
+<div class="cvs"><h3>Giới thiệu / Mục tiêu nghề nghiệp</h3><textarea id="a7" style="min-height:100px" placeholder="Giới thiệu ngắn về bản thân, thế mạnh và loại công việc bạn muốn nhận">${esc(m.bio)}</textarea></div>
+${SEC.map(s=>`<div class="cvs"><h3>${s.t}</h3><div id="s-${s.k}">${ents(s.k)}</div><button class="btn g" data-add="${s.k}">${s.add}</button></div>`).join("")}
+<div class="sv"><button class="btn" id="sb">Lưu thông tin</button>${me?'<button class="btn g" id="cc">Huỷ</button>':""}<span class="err" id="er"></span></div></div></div>`;
+$("#a2").value=m.cat;$("#gd").value=m.gender||"";
+const draw=()=>{$("#sk").innerHTML=SKILLS[cat].map(s=>`<span class="chip ${sel.has(s)?"on":""}" data-s="${esc(s)}">${esc(s)}</span>`).join("")};draw();
+const cv=$(".cv");
+cv.addEventListener("input",e=>{const t=e.target.dataset;if(t.k)D2[t.k][+t.i][t.f]=e.target.value});
+cv.addEventListener("click",e=>{const t=e.target.dataset;if(t.s){sel.has(t.s)?sel.delete(t.s):sel.add(t.s);draw()}else if(t.add){D2[t.add].push({});$("#s-"+t.add).innerHTML=ents(t.add)}else if(t.del){const[k,i]=t.del.split(":");D2[k].splice(+i,1);$("#s-"+k).innerHTML=ents(k)}});
+$("#a2").onchange=e=>{cat=e.target.value;sel=new Set([...sel].filter(s=>SKILLS[cat].includes(s)));draw()};
+$("#ph").onchange=e=>rd(e.target.files[0],d=>shrinkPortrait(d,480,600,p=>{photo=p;$("#pvw").innerHTML=pho()}));
+if($("#cc"))$("#cc").onclick=()=>{edit=false;vShop()};
+$("#sb").onclick=()=>{const v=i=>$("#"+i).value.trim(),city=normCity(v("a3")),rate=moneyVal("a4"),neg=$("#neg").checked,err=t=>$("#er").textContent=t;
+const sk=[...new Set([...sel,...v("a6").split(",").map(s=>s.trim()).filter(Boolean)])];
+if(!v("a1"))return err("Vui lòng nhập họ tên.");if(!cityOk(city))return err("Hãy chọn tỉnh/thành phố trong danh sách gợi ý.");if(!rate&&!neg)return err("Hãy nhập giá nhận việc, hoặc tick \"Thỏa thuận\" nếu giá tuỳ công việc.");if(!sk.length)return err("Hãy chọn ít nhất 1 kỹ năng để chủ dự án biết bạn làm được gì.");
+const d={name:v("a1"),cat:v("a2"),city,rate,negot:neg,exp:+v("a5")||0,bio:v("a7"),skills:sk,photo,gender:v("gd"),byear:v("by"),phone:v("tel"),email:v("mail"),pub:$("#pub").checked};
+SEC.forEach(s=>d[s.k]=D2[s.k].map(o=>Object.fromEntries(Object.entries(o).map(([a,b])=>[a,String(b||"").trim()]))).filter(o=>Object.values(o).some(Boolean)));
+if(me)Object.assign(me,d);else DB.workers.push({id:Date.now(),email:S.email,...d,gallery:[],reviews:[]});edit=false;save();vShop()}}
+function route(){if(!guard("tho"))return;const h=location.hash.slice(1)||"viec";
+if(!["viec","bao","gianhang"].includes(h)){location.hash="viec";return}
+$("#nav").innerHTML=navHtml("tho",h);if(h!=="gianhang")edit=false;
+({viec:vViec,bao:vBids,gianhang:vShop})[h]();scrollTo(0,0)}
+addEventListener("hashchange",route);route();chatInit();
+</script></body></html>
